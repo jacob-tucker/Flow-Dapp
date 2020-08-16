@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@onflow/fcl": "0.0.46",
+    "@onflow/sdk": "0.0.30",
+    "@onflow/types": "0.0.3",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
@@ -13,8 +16,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev:emulator": "docker run -p 3570:3569 -p 8080:8080 -e FLOW_VERBOSE=true -e FLOW_PORT=3570 -e FLOW_HTTPPORT=8080 -e FLOW_SERVICEPRIVATEKEY=3f6e6d7a471d8e2f8dc8dd09a892f39c97fa33e42d4f16c25c541bd1267e31f8 gcr.io/dl-flow/emulator",
+    "dev:wallet": "set PK=3f6e6d7a471d8e2f8dc8dd09a892f39c97fa33e42d4f16c25c541bd1267e31f8 && fcl-wallet"
   },
   "eslintConfig": {
     "extends": "react-app"
