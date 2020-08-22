@@ -53,7 +53,7 @@ const executeReadTokens = async () => {
     "0x04": CustomerAddress
   })
 
-  const response = await fcl.send([
+  await fcl.send([
     sdk.script(scriptCode),
   ]);
 
