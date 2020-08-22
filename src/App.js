@@ -20,6 +20,7 @@ import createRewardURL from './transactions/create_reward.cdc'
 import spendPointsURL from './transactions/spend_points.cdc'
 import removeRewardURL from './transactions/remove_reward.cdc'
 import tradeURL from './transactions/trade.cdc'
+import instagramAdURL from './transactions/instagram_ad.cdc'
 
 import readTokensURL from './scripts/readTokens.cdc'
 
@@ -205,6 +206,21 @@ const tradeTx = async () => {
   });
 }
 
+const instagramADTx = async () => {
+  const tx = await runTransaction(instagramAdURL, {
+    query: /(0x01|0x02|0x04)/g,
+    "0x01": FTAddress,
+    "0x02": NFTAddress,
+    "0x04": CustomerAddress
+  })
+
+  fcl.tx(tx).subscribe((txStatus) => {
+    if (fcl.tx.isExecuted(txStatus)) {
+      console.log("Trade was executed");
+    }
+  });
+}
+
 function App() {
   const [user, setUser] = useState(null)
   const [scriptResult, setScriptResult] = useState(null);
@@ -253,6 +269,7 @@ function App() {
           <button onClick={spendPointsTx}>Spend Points</button>
           <button onClick={removeRewardTx}>Remove Reward</button>
           <button onClick={tradeTx}>Trade</button>
+          <button onClick={instagramADTx}>Instagram Ad</button>
           <button onClick={executeReadTokens}>Read Tokens</button>
           <button onClick={() => fcl.unauthenticate()}>Logout</button>
         </div>}

@@ -15,7 +15,7 @@ transaction {
     let CustomerCollection: &{NonFungibleToken.NFTReceiver}
     let CustomerVaultToWithdraw: &FungibleToken.Vault{FungibleToken.Balance, FungibleToken.Provider}
     let CostOfItem: UFix64
-    
+     
     prepare(acct: AuthAccount) {
         // Borrows a reference to the retailer's rewards so we can see if the item exists and
         // how much it costs

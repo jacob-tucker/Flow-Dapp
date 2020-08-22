@@ -36,6 +36,10 @@ pub contract NonFungibleToken {
             self.UCV = self.UCV + UFix64(1)
         }
 
+        pub fun ad() {
+            self.UCV = self.UCV + UFix64(0.5)
+        }
+
         init() {
             self.UCV = UFix64(0)
         }
