@@ -6,7 +6,10 @@ import RewardsContract from 0x03
 // This transaction allows the user to spend tokens on an item that is currently in the retailer's 
 // rewards list. The amount of fungible tokens it costs is already given inside the retailer's 
 // rewards resource so we know how much to deduct/if the customer has enough in the first place
- 
+
+// NOTE: Setup for Customer, Setup for Retailer, Earning Points and Create Reward must be run prior to this transaction.
+// The User should also meet the required amount of tokens or this will not work, and it will be logged to the console.
+
 // SIGNED BY: CUSTOMER
 transaction {
     let CustomerCollection: &{NonFungibleToken.NFTReceiver}
@@ -42,8 +45,8 @@ transaction {
                                         .borrow<&FungibleToken.Vault{FungibleToken.Balance, FungibleToken.Provider}>()
                                         ?? panic("Could not borrow owner's vault reference")                                
 
-        if customerVaultToWithdrawTemp.balance < cost {
-            panic("Not enough tokens!")
+        if customerVaultToWithdrawTemp.mapTokensToRetailer["McDonalds"]! < cost {
+            panic("Not enough tokens at this retailer!")
         }
 
         self.CustomerVaultToWithdraw = customerVaultToWithdrawTemp
@@ -63,7 +66,7 @@ transaction {
         log("Minted an NFT and put it in the customer's account")
         
         // The cost of the item in points is deducted from the user's account
-        let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItem)
+        let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItem, retailer: "McDonalds")
         destroy removedTokensVault
 
         log("Took 30 points away")  

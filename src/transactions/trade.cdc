@@ -3,9 +3,10 @@ import FungibleToken from 0x01
 import NonFungibleToken from 0x02
 import RewardsContract from 0x03
 
-
 // This transaction trades an NFT for a certain amount of fungible tokens. One user receives an NFT 
 // and one user receives a certain amount of fungible tokens.
+
+// SIGNER: The person giving away the NFT
 transaction {
 
     let account1NFTGive: &NonFungibleToken.Collection
@@ -37,10 +38,13 @@ transaction {
                                         .borrow<&FungibleToken.Vault{FungibleToken.Provider}>()
                                         ?? panic("Could not borrow account 2's vault reference") 
         // Removes the fungible token's from account 2 and stores them in a vault
-        let removedTokensVault <- account2VaultGive.withdraw(amount: UFix64(10))
+        // NOTE: The retailer must match the retailer in the next line of code so tokens
+        // from different retailers don't get confused.
+        let removedTokensVault <- account2VaultGive.withdraw(amount: UFix64(10), retailer: "McDonalds")
 
-        // Deposits the vault into account 1
-        self.account1VaultTake.deposit(from: <-removedTokensVault)
+        // Deposits the vault into account 1 in the same retailer as the retailer that the other account
+        // withdrew their tokens from
+        self.account1VaultTake.deposit(from: <-removedTokensVault, retailer: "McDonalds")
 
         // Gets a reference to account 2's NFT Collection because they will be
         // receiving NFTs
@@ -50,5 +54,7 @@ transaction {
 
         // Deposits the NFT into account 2
         account2NFTTake.deposit(token: <-self.transferingNFT)
+
+        log("Trade completed!")
     }
 }

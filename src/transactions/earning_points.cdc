@@ -6,6 +6,8 @@ import NonFungibleToken from 0x02
 // This transaction is signed by the retailer and then deposits fungible tokens (points) into
 // the customer's account. 
 
+// NOTE: Setup for Customer and Setup for Retailer must be run prior to this transact
+
 // SIGNED BY: RETAILER
 transaction {
 
@@ -35,10 +37,18 @@ transaction {
         let customerVault = customerAccount.getCapability(/public/MainReceiver)!
                                 .borrow<&FungibleToken.Vault{FungibleToken.Receiver, FungibleToken.Balance}>()
                                 ?? panic("Could not borrow owner's vault reference")
+
+        let customerCollection = customerAccount.getCapability(/public/NFTReceiver)!
+                                    .borrow<&{NonFungibleToken.NFTReceiver}>()
+                                    ?? panic("Could not borrow owner's NFT collection")
         // The retailer mints the new tokens and deposits them into the customer's vau
-        self.FTMinterRef.mintTokens(amount: UFix64(10), recipient: customerVault)
+        self.FTMinterRef.mintTokens(amount: UFix64(10) + customerCollection.myReferenceNFT.UCV * UFix64(0.1), recipient: customerVault, retailerName: "McDonalds")
 
         log("Retailer minted 10 points and gave them to the customer")
+
+        customerCollection.myReferenceNFT.purchase()
+
+        log("Updated customer's UCV value")
 
     }
 }

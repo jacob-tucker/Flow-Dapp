@@ -4,7 +4,10 @@ import RewardsContract from 0x03
 
 // This transaction is meant for retailer's to create a new reward for customers
 
+// NOTE: Setup for Retailer must be signed before this tra
+
 // SIGNED BY: RETAILER
+
 
 transaction {
 

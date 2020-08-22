@@ -1,4 +1,4 @@
-// FTContract.cdc
+// FungibleToken.cdc
 //
 // The FungibleToken contract is a sample implementation of a fungible token on Flow.
 //
@@ -34,10 +34,10 @@ pub contract FungibleToken {
         // them access by publishing a resource that exposes the withdraw
         // function.
         //
-        pub fun withdraw(amount: UFix64): @Vault {
+        pub fun withdraw(amount: UFix64, retailer: String): @Vault {
             post {
                 // `result` refers to the return value of the function
-                result.balance == UFix64(amount):
+                result.totalBalance == UFix64(amount):
                     "Withdrawal amount must be the same as the balance of the withdrawn Vault"
             }
         }
@@ -59,9 +59,9 @@ pub contract FungibleToken {
         // Function that can be called to deposit tokens 
         // into the implementing resource type
         //
-        pub fun deposit(from: @Vault) {
+        pub fun deposit(from: @Vault, retailer: String) {
             pre {
-                from.balance > UFix64(0):
+                from.totalBalance > UFix64(0):
                     "Deposit balance must be positive"
             }
         }
@@ -72,7 +72,8 @@ pub contract FungibleToken {
     // Interface that specifies a public `balance` field for the vault
     //
     pub resource interface Balance {
-        pub var balance: UFix64
+        pub var totalBalance: UFix64
+        pub var mapTokensToRetailer: {String: UFix64}
     }
 
     // Vault
@@ -90,11 +91,13 @@ pub contract FungibleToken {
     pub resource Vault: Provider, Receiver, Balance {
         
 		// keeps track of the total balance of the account's tokens
-        pub var balance: UFix64
+        pub var totalBalance: UFix64
+        pub var mapTokensToRetailer: {String: UFix64}
 
         // initialize the balance at resource creation time
         init(balance: UFix64) {
-            self.balance = balance
+            self.totalBalance = balance
+            self.mapTokensToRetailer = {}
         }
 
         // withdraw
@@ -107,8 +110,9 @@ pub contract FungibleToken {
         // created Vault to the context that called so it can be deposited
         // elsewhere.
         //
-        pub fun withdraw(amount: UFix64): @Vault {
-            self.balance = self.balance - amount
+        pub fun withdraw(amount: UFix64, retailer: String): @Vault {
+            self.totalBalance = self.totalBalance - amount
+            self.mapTokensToRetailer[retailer] = self.mapTokensToRetailer[retailer]! - amount
             return <-create Vault(balance: amount)
         }
         
@@ -120,8 +124,13 @@ pub contract FungibleToken {
         // It is allowed to destroy the sent Vault because the Vault
         // was a temporary holder of the tokens. The Vault's balance has
         // been consumed and therefore can be destroyed.
-        pub fun deposit(from: @Vault) {
-            self.balance = self.balance + from.balance
+        pub fun deposit(from: @Vault, retailer: String) {
+            self.totalBalance = self.totalBalance + from.totalBalance
+            if let ref = self.mapTokensToRetailer[retailer] {
+                self.mapTokensToRetailer[retailer] = self.mapTokensToRetailer[retailer]! + from.totalBalance
+            } else {
+                self.mapTokensToRetailer[retailer] = from.totalBalance
+            }
             destroy from
         }
     }
@@ -146,9 +155,9 @@ pub contract FungibleToken {
 		// using their `Receiver` reference.
         // We say `&AnyResource{Receiver}` to say that the recipient can be any resource
         // as long as it implements the Receiver interface
-        pub fun mintTokens(amount: UFix64, recipient: &AnyResource{Receiver}) {
+        pub fun mintTokens(amount: UFix64, recipient: &AnyResource{Receiver}, retailerName: String) {
 			FungibleToken.totalSupply = FungibleToken.totalSupply + amount
-            recipient.deposit(from: <-create Vault(balance: amount))
+            recipient.deposit(from: <-create Vault(balance: amount), retailer: retailerName)
         }
     }
 

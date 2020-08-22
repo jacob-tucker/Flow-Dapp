@@ -31,7 +31,8 @@ pub fun main() {
     // Account 0x01 should have 40.
     // Account 0x02 should have 20.
     log("Account 1 Balance")
-    log(acct1ReceiverRef.balance)
+    log(acct1ReceiverRef.totalBalance)
+    log(acct1ReceiverRef.mapTokensToRetailer)
 
     // Find the public Receiver capability for the user's collection
     let acct1Capability = acct1.getCapability(/public/NFTReceiver)!
@@ -41,4 +42,5 @@ pub fun main() {
      // Print both collections as arrays of IDs
     log("Account 1 NFTs")
     log(acct1Capability.getItems())
+    log(acct1Capability.getReferenceUCV())
 }

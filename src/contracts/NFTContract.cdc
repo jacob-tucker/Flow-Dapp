@@ -1,4 +1,4 @@
-// NFTContract.cdc
+// NFTv2.cdc
 //
 // This is a complete version of the NonFungibleToken contract
 // that includes withdraw and deposit functionality, as well as a
@@ -28,14 +28,31 @@ pub contract NonFungibleToken {
         }
     }
 
+    pub resource ReferenceNFT {
+        // The UCV value of the NFT
+        pub var UCV: UFix64
+
+        pub fun purchase() {
+            self.UCV = self.UCV + UFix64(1)
+        }
+
+        init() {
+            self.UCV = UFix64(0)
+        }
+    }
+
     // We define this interface purely as a way to allow users
     // to create public, restricted references to their NFT Collection.
     // They would use this to only expose the deposit, getIDs,
     // and idExists fields in their Collection
     pub resource interface NFTReceiver {
+        pub var myReferenceNFT: @ReferenceNFT
+
         pub fun deposit(token: @NFT)
 
         pub fun getItems(): [String]
+
+        pub fun getReferenceUCV(): UFix64
 
         pub fun itemExists(item: String): Bool
     }
@@ -47,9 +64,14 @@ pub contract NonFungibleToken {
         // NFT is a resource type with an `UInt64` ID field
         pub var ownedNFTs: @{String: NFT}
 
+        // this is the reference NFT that we want put in the Collection, it holds the UCV value 
+        // for each customer
+        pub var myReferenceNFT: @ReferenceNFT
+
         // Initialize the NFTs field to an empty collection
         init () {
             self.ownedNFTs <- {}
+            self.myReferenceNFT <- create ReferenceNFT()
         }
 
         // withdraw 
@@ -86,8 +108,13 @@ pub contract NonFungibleToken {
             return self.ownedNFTs.keys
         }
 
+        pub fun getReferenceUCV(): UFix64 {
+            return self.myReferenceNFT.UCV
+        }
+
         destroy() {
             destroy self.ownedNFTs
+            destroy self.myReferenceNFT
         }
     }
 
