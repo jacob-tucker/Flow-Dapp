@@ -1,4 +1,4 @@
-// CheckSetupScript.cdc
+// readTokens.cdc
 
 import FungibleToken from 0x01
 import NonFungibleToken from 0x02
@@ -42,5 +42,6 @@ pub fun main() {
      // Print both collections as arrays of IDs
     log("Account 1 NFTs")
     log(acct1Capability.getItems())
+    log("Account 1's UCV")
     log(acct1Capability.getReferenceUCV())
 }

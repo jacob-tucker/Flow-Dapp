@@ -24,10 +24,10 @@ transaction {
         }
 
         // Creates the new reward
-        RetailerRewards.createReward(name: "Water Bottle", points: UFix64(30))
+        RetailerRewards.createReward(name: "Water Bottle", points: UFix64(30), ucvNumber: UFix64(5), otherRetailers: ["Burger King"])
 
         log("Created reward")
-    }
+    } 
 
     execute {
 
