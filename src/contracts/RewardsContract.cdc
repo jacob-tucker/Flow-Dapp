@@ -16,10 +16,20 @@ pub contract RewardsContract {
         // The amount of points the customer needs for this NFT
         pub let points: UFix64
 
-        init(theAllowedRetailers: [String], theMinimumUCVForOthers: UFix64, thePoints: UFix64) {
+        // The amount of points needed if the customer uses tokens in the transaction from other retailers.
+        // Calculates by self.points * the multiplier (for example 1.25)
+        pub let points2nd: UFix64
+
+        // This specifies the minimum amount of tokens from THIS retailer that they must spend
+        // if also trying to spend tokens from other retailers to help out with the cost.
+        pub let minTokensFromHere: UFix64
+
+        init(theAllowedRetailers: [String], theMinimumUCVForOthers: UFix64, thePoints: UFix64, theMinTokensPercent: UFix64, theMultiplier: UFix64) {
             self.allowedRetailers = theAllowedRetailers
             self.minimumUCVForOthers = theMinimumUCVForOthers
             self.points = thePoints
+            self.points2nd = thePoints * theMultiplier
+            self.minTokensFromHere = (thePoints * theMultiplier) * theMinTokensPercent
         }
     }
 
@@ -36,8 +46,8 @@ pub contract RewardsContract {
         
         // Creates a new reward and also specifies if this reward allows points to be spent that were earned
         // from other retailers (and if so, what those retailers are).
-        pub fun createReward(name: String, points: UFix64, ucvNumber: UFix64, otherRetailers: [String]) {
-            let theReward <- create Reward(theAllowedRetailers: otherRetailers, theMinimumUCVForOthers: ucvNumber, thePoints: points)
+        pub fun createReward(name: String, points: UFix64, ucvNumber: UFix64, otherRetailers: [String], minTokensPercent: UFix64, multiplier: UFix64) {
+            let theReward <- create Reward(theAllowedRetailers: otherRetailers, theMinimumUCVForOthers: ucvNumber, thePoints: points, theMinTokensPercent: minTokensPercent, theMultiplier: multiplier)
             let oldReward <- self.rewards[name] <- theReward
             destroy oldReward
 

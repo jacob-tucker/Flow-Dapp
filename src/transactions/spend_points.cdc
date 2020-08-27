@@ -10,11 +10,12 @@ import RewardsContract from 0x03
 // NOTE: Setup for Customer, Setup for Retailer, Earning Points and Create Reward must be run prior to this transaction.
 // The User should also meet the required amount of tokens or this will not work, and it will be logged to the console.
 
-// SIGNED BY: CUSTOMER 
+// SIGNED BY: CUSTOMER
 transaction {
     let CustomerCollection: &{NonFungibleToken.NFTReceiver}
     let CustomerVaultToWithdraw: &FungibleToken.Vault{FungibleToken.Balance, FungibleToken.Provider}
     let CostOfItem: UFix64
+    let CostOfItemWithOtherRetailer: UFix64
 
     // Whether or not the customer would like to use the other retailer
     let OtherRetailerBool: Bool
@@ -25,6 +26,10 @@ transaction {
     // The minimum UCV value that the customer must have to be able to use 
     // the other tokens for this reatiler's NFT
     let MinUCV: UFix64
+    // The amount of tokens the user will use from THIS retailer
+    let TokensFromHere: UFix64
+    // The minimum tokens the user can use from this retailer (if the user is using a seperate retailer)
+    let MinTokensFromHere: UFix64
     
     prepare(acct: AuthAccount) {
         // Borrows a reference to the retailer's rewards so we can see if the item exists and
@@ -34,21 +39,10 @@ transaction {
                                 .borrow<&RewardsContract.Rewards>()
                                 ?? panic("Could not borrow rewards resource")
 
-        // If the item does not exist, panic
+        // If the reward does not exist, panic
         if RetailerRewards.itemExists(name: "Water Bottle") == false {
             panic("Item does not exist!")
         }
-
-        // Record the cost of the item (found in the retailer's list of rewards) by getting the reward resource first
-        let reward <- RetailerRewards.getReward(name: "Water Bottle")
-        // Record the cost of the reward
-        let cost = reward.points
-        let allowedRetailers = reward.allowedRetailers
-        let minUCV = reward.minimumUCVForOthers
-        // Put the reward back in the dictionary by using the double <- move operator
-        let oldReward <- RetailerRewards.rewards["Water Bottle"] <- reward
-        // Destroy the temp reward 
-        destroy oldReward
 
         // Borrows a reference by using a capability to the customer's NFT collection
         // so we can deposit into this collection
@@ -58,18 +52,36 @@ transaction {
 
         // Borrows a reference by using a capability to the customer's fungible token vault
         // so that we can withdraw tokens and check the vault's balance
-        let customerVaultToWithdrawTemp = acct.getCapability(/public/MainReceiver)!
+        self.CustomerVaultToWithdraw = acct.getCapability(/public/MainReceiver)!
                                         .borrow<&FungibleToken.Vault{FungibleToken.Balance, FungibleToken.Provider}>()
                                         ?? panic("Could not borrow owner's vault reference")                                
 
-        self.CustomerVaultToWithdraw = customerVaultToWithdrawTemp
+        // Borrows the reward resource that corresponds to the NFT we are talking about
+        let reward <- RetailerRewards.getReward(name: "Water Bottle")
+        // Record the cost of the reward
+        self.CostOfItem = reward.points
+        // Record the cost of the reward if another retailer's points is involved
+        self.CostOfItemWithOtherRetailer = reward.points2nd
 
-        // This is saying the user would like to use burger king in their transaction
+        // The allowed retailers if there are tokens being used by other retailers
+        self.AllowedRetailers = reward.allowedRetailers
+        // The min UCV the customer must have to use tokens from other retailers
+        self.MinUCV = reward.minimumUCVForOthers
+        // Minimum amount of tokens the user must spend from this retailer if another
+        // retailer's points are involved
+        self.MinTokensFromHere = reward.minTokensFromHere
+        // Put the reward back in the dictionary by using the double <- move operator
+        let oldReward <- RetailerRewards.rewards["Water Bottle"] <- reward
+        // Destroy the temp reward 
+        destroy oldReward
+
+        // This is saying the user will use another retailer's points in the transaction
         self.OtherRetailerBool = true
+        // Specifies the retailer from which the user will use their points that they earned there
         self.OtherRetailer = "Burger King"
-        self.CostOfItem = cost
-        self.AllowedRetailers = allowedRetailers
-        self.MinUCV = minUCV
+        // The amount of tokens the user will use from this retailer (THIS ONLY APPLIES IF THE USER
+        // IS USING A SEPERATE RETAILER'S TOKENS)
+        self.TokensFromHere = UFix64(25)
 
     }
 
@@ -85,16 +97,22 @@ transaction {
         if (self.OtherRetailerBool) {
             // Makes sure that the retailer the customer wants to use to help pay for the NFT is in the allowed
             // category of the reward, and also makes sure the customer meets the UCV requirements
-            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV > self.MinUCV) {
+            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV >= self.MinUCV) {
+                // Makes sure the user is using the minimum amount of tokens from this retailer
+                if (self.TokensFromHere < self.MinTokensFromHere) {
+                    panic("You are not using enough tokens from this retailer")
+                }
                 // The cost of the item in points is deducted from the user's account
-                let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItem - UFix64(10), retailer: "McDonalds")
+                let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.TokensFromHere, retailer: "McDonalds")
                 destroy removedTokensVault
 
                 // Removes tokens from the other retailer as well
-                let removedTokensOtherVault <- self.CustomerVaultToWithdraw.withdraw(amount: UFix64(10), retailer: self.OtherRetailer)
+                // The amount of tokens is the cost of the NFT if another retailer is involved - the amount of tokens we're using from
+                // the retailer we're purchasing from
+                let removedTokensOtherVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItemWithOtherRetailer - self.TokensFromHere, retailer: self.OtherRetailer)
                 destroy removedTokensOtherVault
                 
-                log("Took 30 points away")  
+                log("Took points away")  
 
                 // The retailer mints the new NFT and deposits it into the customer's collection
                 NFTMinterRef.mintNFT(recipient: self.CustomerCollection, retailer: "McDonalds", item: "Water Bottle")
