@@ -36,12 +36,14 @@ pub fun main() {
 
     // Find the public Receiver capability for the user's collection
     let acct1Capability = acct1.getCapability(/public/NFTReceiver)!
-                            .borrow<&{NonFungibleToken.NFTReceiver}>()
+                            .borrow<&{NonFungibleToken.NFTReceiver, NonFungibleToken.ReferenceUser}>()
                             ?? panic("Could not borrow acct1 nft collection reference")
 
      // Print both collections as arrays of IDs
     log("Account 1 NFTs")
     log(acct1Capability.getItems())
     log("Account 1's UCV")
-    log(acct1Capability.getReferenceUCV())
+    log(acct1Capability.myReferenceNFT.UCV)
+    log("Account 1's CV values")
+    log(acct1Capability.myReferenceNFT.CV)
 }

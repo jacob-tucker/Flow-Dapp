@@ -34,7 +34,7 @@ transaction {
                                 ?? panic("Could not borrow owner's vault reference")
 
         let customerCollection = customerAccount.getCapability(/public/NFTReceiver)!
-                                    .borrow<&{NonFungibleToken.NFTReceiver}>()
+                                    .borrow<&{NonFungibleToken.NFTReceiver, NonFungibleToken.ReferenceUser}>()
                                     ?? panic("Could not borrow owner's NFT collection")
         // The retailer mints the new tokens and deposits them into the customer's vault, taking into
         // account 5% of the UCV value.
@@ -42,9 +42,9 @@ transaction {
 
         log("Retailer minted >= 10 points and gave them to the customer")
 
-        customerCollection.myReferenceNFT.ad()
+        customerCollection.myReferenceNFT.ad(retailer: "McDonalds")
 
-        log("Updated customer's UCV value")
+        log("Updated customer's UCV and CV value")
     }
 
 }

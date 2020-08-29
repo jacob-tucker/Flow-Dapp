@@ -32,16 +32,34 @@ pub contract NonFungibleToken {
         // The UCV value of the NFT
         pub var UCV: UFix64
 
-        pub fun purchase() {
+        // The CV at each Retailer. Maps Retailer name -> CV there
+        pub var CV: {String: UFix64}
+
+        pub fun purchase(retailer: String) {
             self.UCV = self.UCV + UFix64(1)
+
+            // Checks to see if it already exists using optional binding
+            if let mapper = self.CV[retailer] {
+                self.CV[retailer] = self.CV[retailer]! + UFix64(1)
+            } else {
+                self.CV[retailer] = UFix64(1)
+            }
         }
 
-        pub fun ad() {
+        pub fun ad(retailer: String) {
             self.UCV = self.UCV + UFix64(0.5)
+
+            // Checks to see if it already exists using optional binding
+            if let mapper = self.CV[retailer] {
+                self.CV[retailer] = self.CV[retailer]! + UFix64(0.5)
+            } else {
+                self.CV[retailer] = UFix64(0.5)
+            }
         }
 
         init() {
             self.UCV = UFix64(0)
+            self.CV = {}
         }
     }
 
@@ -50,20 +68,21 @@ pub contract NonFungibleToken {
     // They would use this to only expose the deposit, getIDs,
     // and idExists fields in their Collection
     pub resource interface NFTReceiver {
-        pub var myReferenceNFT: @ReferenceNFT
 
         pub fun deposit(token: @NFT)
 
         pub fun getItems(): [String]
 
-        pub fun getReferenceUCV(): UFix64
-
         pub fun itemExists(item: String): Bool
+    }
+
+    pub resource interface ReferenceUser {
+        pub var myReferenceNFT: @ReferenceNFT
     }
 
     // The definition of the Collection resource that
     // holds the NFTs that a user owns
-    pub resource Collection: NFTReceiver {
+    pub resource Collection: NFTReceiver, ReferenceUser {
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         pub var ownedNFTs: @{String: NFT}
@@ -110,10 +129,6 @@ pub contract NonFungibleToken {
         // getIDs returns an array of the IDs that are in the collection
         pub fun getItems(): [String] {
             return self.ownedNFTs.keys
-        }
-
-        pub fun getReferenceUCV(): UFix64 {
-            return self.myReferenceNFT.UCV
         }
 
         destroy() {

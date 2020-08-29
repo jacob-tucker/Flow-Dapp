@@ -21,10 +21,14 @@ import spendPointsURL from './transactions/spend_points.cdc'
 import removeRewardURL from './transactions/remove_reward.cdc'
 import tradeURL from './transactions/trade.cdc'
 import instagramAdURL from './transactions/instagram_ad.cdc'
+import setupForNonProfitURL from './transactions/setup_for_nonprofit.cdc'
+import stakeNonProfitURL from './transactions/stake_nonprofit.cdc'
 
 import readTokensURL from './scripts/readTokens.cdc'
+import readRewardsURL from './scripts/readRewards.cdc'
+import readNonProfitTokensURL from './scripts/readNonProfitTokens.cdc'
 
-import { FTAddress, NFTAddress, RewardsAddress, CustomerAddress, RetailerAddress } from './flow/addresses'
+import { FTAddress, NFTAddress, RewardsAddress, CustomerAddress, RetailerAddress, NonProfitAddress } from './flow/addresses'
 import loadCode from './utils/load-code';
 
 // Connection to dev wallet
@@ -51,6 +55,38 @@ const executeReadTokens = async () => {
     "0x01": FTAddress,
     "0x02": NFTAddress,
     "0x04": CustomerAddress
+  })
+
+  await fcl.send([
+    sdk.script(scriptCode),
+  ]);
+
+  console.log("Finished")
+
+}
+
+const executeReadRewards = async () => {
+  let scriptCode = await loadCode(readRewardsURL, {
+    query: /(0x01|0x02|0x03|0x05)/g,
+    "0x01": FTAddress,
+    "0x02": NFTAddress,
+    "0x03": RewardsAddress,
+    "0x05": RetailerAddress
+  })
+
+  await fcl.send([
+    sdk.script(scriptCode),
+  ]);
+
+  console.log("Finished")
+
+}
+
+const executeReadNonProfitNFTs = async () => {
+  let scriptCode = await loadCode(readNonProfitTokensURL, {
+    query: /(0x02|0x06)/g,
+    "0x02": NFTAddress,
+    "0x06": NonProfitAddress
   })
 
   await fcl.send([
@@ -221,6 +257,33 @@ const instagramADTx = async () => {
   });
 }
 
+const setupNonProfitTx = async () => {
+  const tx = await runTransaction(setupForNonProfitURL, {
+    query: /(0x02)/g,
+    "0x02": NFTAddress
+  })
+
+  fcl.tx(tx).subscribe((txStatus) => {
+    if (fcl.tx.isExecuted(txStatus)) {
+      console.log("Trade was executed");
+    }
+  });
+}
+
+const stakeNonProfitTx = async () => {
+  const tx = await runTransaction(stakeNonProfitURL, {
+    query: /(0x02|0x06)/g,
+    "0x02": NFTAddress,
+    "0x06": NonProfitAddress
+  })
+
+  fcl.tx(tx).subscribe((txStatus) => {
+    if (fcl.tx.isExecuted(txStatus)) {
+      console.log("Trade was executed");
+    }
+  });
+}
+
 function App() {
   const [user, setUser] = useState(null)
   const [scriptResult, setScriptResult] = useState(null);
@@ -270,7 +333,11 @@ function App() {
           <button onClick={removeRewardTx}>Remove Reward</button>
           <button onClick={tradeTx}>Trade</button>
           <button onClick={instagramADTx}>Instagram Ad</button>
+          <button onClick={setupNonProfitTx}>Setup For NonProfit</button>
+          <button onClick={stakeNonProfitTx}>Stake NonProfit</button>
           <button onClick={executeReadTokens}>Read Tokens</button>
+          <button onClick={executeReadRewards}>Read Rewards</button>
+          <button onClick={executeReadNonProfitNFTs}>Read NonProfit NFTs</button>
           <button onClick={() => fcl.unauthenticate()}>Logout</button>
         </div>}
     </div >

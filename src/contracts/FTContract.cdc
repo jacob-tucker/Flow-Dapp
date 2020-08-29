@@ -174,3 +174,4 @@ pub contract FungibleToken {
         self.totalSupply = 0.0
     }
 }
+ 

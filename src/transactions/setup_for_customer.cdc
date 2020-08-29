@@ -28,7 +28,7 @@ transaction {
     acct.save<@NonFungibleToken.Collection>(<-NonFungibleToken.createEmptyCollection(), to: /storage/NFTCollection)
 
     // publish a capability to the Collection in storage so it can be deposited into
-    acct.link<&{NonFungibleToken.NFTReceiver}>(/public/NFTReceiver, target: /storage/NFTCollection)
+    acct.link<&{NonFungibleToken.NFTReceiver, NonFungibleToken.ReferenceUser}>(/public/NFTReceiver, target: /storage/NFTCollection)
 
     log("Created a new NFT empty collection and published a reference")
   }

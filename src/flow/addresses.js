@@ -12,3 +12,6 @@ export const CustomerAddress = "0xe03daebed8ca0615"
 
 export const RetailerAddress = "0x045a1763c93006ca"
 //0x05
+
+export const NonProfitAddress = "0x120e725050340cab"
+//0x06

@@ -12,7 +12,7 @@ import RewardsContract from 0x03
 
 // SIGNED BY: CUSTOMER
 transaction {
-    let CustomerCollection: &{NonFungibleToken.NFTReceiver}
+    let CustomerCollection: &{NonFungibleToken.NFTReceiver, NonFungibleToken.ReferenceUser}
     let CustomerVaultToWithdraw: &FungibleToken.Vault{FungibleToken.Balance, FungibleToken.Provider}
     let CostOfItem: UFix64
     let CostOfItemWithOtherRetailer: UFix64
@@ -26,6 +26,7 @@ transaction {
     // The minimum UCV value that the customer must have to be able to use 
     // the other tokens for this reatiler's NFT
     let MinUCV: UFix64
+    let MinCV: UFix64
     // The amount of tokens the user will use from THIS retailer
     let TokensFromHere: UFix64
     // The minimum tokens the user can use from this retailer (if the user is using a seperate retailer)
@@ -47,7 +48,7 @@ transaction {
         // Borrows a reference by using a capability to the customer's NFT collection
         // so we can deposit into this collection
         self.CustomerCollection = acct.getCapability(/public/NFTReceiver)!
-                                    .borrow<&{NonFungibleToken.NFTReceiver}>()
+                                    .borrow<&{NonFungibleToken.NFTReceiver, NonFungibleToken.ReferenceUser}>()
                                     ?? panic("Could not borrow owner's NFTCollection reference") 
 
         // Borrows a reference by using a capability to the customer's fungible token vault
@@ -67,6 +68,8 @@ transaction {
         self.AllowedRetailers = reward.allowedRetailers
         // The min UCV the customer must have to use tokens from other retailers
         self.MinUCV = reward.minimumUCVForOthers
+        // The min UCV the customer must have to use tokens from other retailers
+        self.MinCV = reward.minimumCVForOthers
         // Minimum amount of tokens the user must spend from this retailer if another
         // retailer's points are involved
         self.MinTokensFromHere = reward.minTokensFromHere
@@ -76,7 +79,8 @@ transaction {
         destroy oldReward
 
         // This is saying the user will use another retailer's points in the transaction
-        self.OtherRetailerBool = true
+        // If FALSE: the user will only use their points from this retailer
+        self.OtherRetailerBool = false
         // Specifies the retailer from which the user will use their points that they earned there
         self.OtherRetailer = "Burger King"
         // The amount of tokens the user will use from this retailer (THIS ONLY APPLIES IF THE USER
@@ -97,7 +101,7 @@ transaction {
         if (self.OtherRetailerBool) {
             // Makes sure that the retailer the customer wants to use to help pay for the NFT is in the allowed
             // category of the reward, and also makes sure the customer meets the UCV requirements
-            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV >= self.MinUCV) {
+            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV >= self.MinUCV && self.CustomerCollection.myReferenceNFT.CV["McDonalds"]! >= self.MinCV) {
                 // Makes sure the user is using the minimum amount of tokens from this retailer
                 if (self.TokensFromHere < self.MinTokensFromHere) {
                     panic("You are not using enough tokens from this retailer")
@@ -108,7 +112,7 @@ transaction {
 
                 // Removes tokens from the other retailer as well
                 // The amount of tokens is the cost of the NFT if another retailer is involved - the amount of tokens we're using from
-                // the retailer we're purchasing from
+                // the retailer we're purchasing fr
                 let removedTokensOtherVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItemWithOtherRetailer - self.TokensFromHere, retailer: self.OtherRetailer)
                 destroy removedTokensOtherVault
                 
@@ -119,7 +123,7 @@ transaction {
 
                 log("Minted an NFT and put it in the customer's account")
             } else {
-                panic("This retailer is not allowed or you do not meet the UCV requirements")
+                panic("This retailer is not allowed or you do not meet the UCV/CV requirements")
             }
         } else {
             // This is if they are just using tokens from the retailer they are getting the NFT from

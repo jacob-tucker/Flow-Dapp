@@ -13,6 +13,10 @@ pub contract RewardsContract {
         // points from other retailers
         pub let minimumUCVForOthers: UFix64
 
+        // The minimum CV value the customer must have to be able to use
+        // points from other retailers
+        pub let minimumCVForOthers: UFix64
+
         // The amount of points the customer needs for this NFT
         pub let points: UFix64
 
@@ -24,9 +28,10 @@ pub contract RewardsContract {
         // if also trying to spend tokens from other retailers to help out with the cost.
         pub let minTokensFromHere: UFix64
 
-        init(theAllowedRetailers: [String], theMinimumUCVForOthers: UFix64, thePoints: UFix64, theMinTokensPercent: UFix64, theMultiplier: UFix64) {
+        init(theAllowedRetailers: [String], theMinimumUCVForOthers: UFix64, theMinimumCVForOthers: UFix64, thePoints: UFix64, theMinTokensPercent: UFix64, theMultiplier: UFix64) {
             self.allowedRetailers = theAllowedRetailers
             self.minimumUCVForOthers = theMinimumUCVForOthers
+            self.minimumCVForOthers = theMinimumCVForOthers
             self.points = thePoints
             self.points2nd = thePoints * theMultiplier
             self.minTokensFromHere = (thePoints * theMultiplier) * theMinTokensPercent
@@ -46,8 +51,8 @@ pub contract RewardsContract {
         
         // Creates a new reward and also specifies if this reward allows points to be spent that were earned
         // from other retailers (and if so, what those retailers are).
-        pub fun createReward(name: String, points: UFix64, ucvNumber: UFix64, otherRetailers: [String], minTokensPercent: UFix64, multiplier: UFix64) {
-            let theReward <- create Reward(theAllowedRetailers: otherRetailers, theMinimumUCVForOthers: ucvNumber, thePoints: points, theMinTokensPercent: minTokensPercent, theMultiplier: multiplier)
+        pub fun createReward(name: String, points: UFix64, ucvNumber: UFix64, cvNumber: UFix64, otherRetailers: [String], minTokensPercent: UFix64, multiplier: UFix64) {
+            let theReward <- create Reward(theAllowedRetailers: otherRetailers, theMinimumUCVForOthers: ucvNumber, theMinimumCVForOthers: cvNumber, thePoints: points, theMinTokensPercent: minTokensPercent, theMultiplier: multiplier)
             let oldReward <- self.rewards[name] <- theReward
             destroy oldReward
 
