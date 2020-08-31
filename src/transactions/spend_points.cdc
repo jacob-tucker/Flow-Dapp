@@ -80,7 +80,7 @@ transaction {
 
         // This is saying the user will use another retailer's points in the transaction
         // If FALSE: the user will only use their points from this retailer
-        self.OtherRetailerBool = false
+        self.OtherRetailerBool = booleanFromClient
         // Specifies the retailer from which the user will use their points that they earned there
         self.OtherRetailer = "Burger King"
         // The amount of tokens the user will use from this retailer (THIS ONLY APPLIES IF THE USER

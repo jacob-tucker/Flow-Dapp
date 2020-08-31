@@ -170,12 +170,13 @@ const setupForRetailerTx = async () => {
   });
 }
 
-const earningPointsTx = async () => {
+const earningPointsTx = async (retailer) => {
   const tx = await runTransaction(earningPointsURL, {
-    query: /(0x01|0x02|0x04)/g,
+    query: /(0x01|0x02|0x04|retailerFromClient)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
-    "0x04": CustomerAddress
+    "0x04": CustomerAddress,
+    "retailerFromClient": `"${retailer}"`
   })
 
   fcl.tx(tx).subscribe((txStatus) => {
@@ -198,13 +199,14 @@ const createRewardTx = async () => {
   });
 }
 
-const spendPointsTx = async () => {
+const spendPointsTx = async (boolean) => {
   const tx = await runTransaction(spendPointsURL, {
-    query: /(0x01|0x02|0x03|0x05)/g,
+    query: /(0x01|0x02|0x03|0x05|booleanFromClient)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
     "0x03": RewardsAddress,
-    "0x05": RetailerAddress
+    "0x05": RetailerAddress,
+    "booleanFromClient": boolean
   })
 
   fcl.tx(tx).subscribe((txStatus) => {
@@ -287,6 +289,10 @@ const stakeNonProfitTx = async () => {
 function App() {
   const [user, setUser] = useState(null)
   const [scriptResult, setScriptResult] = useState(null);
+  const [customer, setCustomer] = useState()
+  const [retailer, setRetailer] = useState('')
+  const [otherRetailer, setOtherRetailer] = useState(false)
+  const [color, setColor] = useState('red')
 
   const handleUser = (user) => {
     console.log(user)
@@ -300,6 +306,11 @@ function App() {
       setUser(null);
     }
   };
+
+  useEffect(() => {
+    if (otherRetailer) setColor('green')
+    else setColor('red')
+  }, [otherRetailer])
 
   useEffect(() => {
     // We need to subscribe the user so we can use it to sign transactions and stuff
@@ -321,15 +332,21 @@ function App() {
         : <div>
           <h1 className="welcome">Welcome, {user.identity.name}</h1>
           <p>Your Address</p><p className="address">{user.addr}</p>
+          <h1>Retailer Name:</h1>
+          <input type="text" onChange={(e) => setRetailer(e.target.value)} />
+          <br />
+          <button style={{ backgroundColor: color, outline: 0 }} onClick={() => setOtherRetailer(!otherRetailer)}>Use Other Retailer?</button>
+          <br />
+
           <button onClick={simpleTransaction}>Simple Tx</button>
           <button onClick={deployFTContract}>Deploy FTContract</button>
           <button onClick={deployNFTContract}>Deploy NFTContract</button>
           <button onClick={deployRewardsContract}>Deploy RewardsContract</button>
           <button onClick={setupForCustomerTx}>Setup For Customer</button>
           <button onClick={setupForRetailerTx}>Setup For Retailer</button>
-          <button onClick={earningPointsTx}>Earning Points</button>
+          <button onClick={() => earningPointsTx(user.identity.name)}>Earning Points</button>
           <button onClick={createRewardTx}>Create Reward</button>
-          <button onClick={spendPointsTx}>Spend Points</button>
+          <button onClick={() => spendPointsTx(otherRetailer)}>Spend Points</button>
           <button onClick={removeRewardTx}>Remove Reward</button>
           <button onClick={tradeTx}>Trade</button>
           <button onClick={instagramADTx}>Instagram Ad</button>
