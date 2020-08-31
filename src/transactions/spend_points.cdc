@@ -91,7 +91,7 @@ transaction {
 
     execute {
         let NFTMinterAccount = getAccount(0x05)
-
+ 
         // Borrow a reference to the retailer's NFT Minter so they can mint tokens into the user's account
         let NFTMinterRef = NFTMinterAccount.getCapability(/public/PubNFTMinter)!
                             .borrow<&NonFungibleToken.NFTMinter>()

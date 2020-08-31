@@ -13,7 +13,7 @@ import NonFungibleToken from 0x02
 // "Setup for Retailer"
 // "Earning Points"
 
-pub fun main() {
+pub fun main(): [String] {
     // Get the accounts' public account objects
     let acct1 = getAccount(0x04)
 
@@ -46,4 +46,6 @@ pub fun main() {
     log(acct1Capability.myReferenceNFT.UCV)
     log("Account 1's CV values")
     log(acct1Capability.myReferenceNFT.CV)
+
+    return acct1Capability.getItems()
 }

@@ -58,28 +58,30 @@ const executeReadTokens = async (customer) => {
     "0x04": `0x${customer}`
   })
 
-  await fcl.send([
+  const response = await fcl.send([
     sdk.script(scriptCode),
   ]);
 
   console.log("Finished")
+  return fcl.decode(response);
 
 }
 
-const executeReadRewards = async () => {
+const executeReadRewards = async (retailer) => {
   let scriptCode = await loadCode(readRewardsURL, {
     query: /(0x01|0x02|0x03|0x05)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
     "0x03": RewardsAddress,
-    "0x05": RetailerAddress
+    "0x05": `0x${retailer}`
   })
 
-  await fcl.send([
+  const response = await fcl.send([
     sdk.script(scriptCode),
   ]);
 
   console.log("Finished")
+  return fcl.decode(response)
 
 }
 
@@ -296,6 +298,8 @@ function App() {
   const [retailerAddress, setRetailerAddress] = useState()
   const [otherRetailer, setOtherRetailer] = useState(false)
   const [color, setColor] = useState('red')
+  const [nfts, setNfts] = useState(null)
+  const [rewards, setRewards] = useState(null)
 
   const handleUser = (user) => {
     console.log(user)
@@ -327,9 +331,19 @@ function App() {
     setScriptResult(result);
   };
 
+  const readTheTokens = async (customer) => {
+    const result = await executeReadTokens(customer)
+    setNfts(result)
+  }
+
+  const readTheRewards = async (retailer) => {
+    const result = await executeReadRewards(retailer)
+    console.log(result)
+    setRewards(result)
+  }
+
   return (
     <div className="App">
-      <button onClick={callScript}>Execute Script</button>
       {scriptResult ? <p className="script-result">Computation Result: {scriptResult}</p> : null}
       {!userLoggedIn ? <button onClick={() => fcl.authenticate()}>Login</button>
         : <div>
@@ -345,54 +359,79 @@ function App() {
           <button onClick={deployNFTContract}>Deploy NFTContract</button>
           <button onClick={deployRewardsContract}>Deploy RewardsContract</button>
 
-          <h1>For Customers:</h1>
-          <h4>Transactions: </h4>
-          <button onClick={setupForCustomerTx}>Setup For Customer</button>
-          <br />
-          <div className="flex">
-            <div>
-              <p>Retailer Address:</p>
-              <input type="text" onChange={(e) => setRetailerAddress(e.target.value)} />
+          <div style={{ backgroundColor: 'lightblue' }}>
+            <h1>For Customers:</h1>
+            <h4>Transactions: </h4>
+            <button onClick={setupForCustomerTx}>Setup For Customer</button>
+            <br />
+            <div className="flex">
+              <div>
+                <p>Retailer Address:</p>
+                <input type="text" onChange={(e) => setRetailerAddress(e.target.value)} />
+              </div>
+              <button style={{ backgroundColor: color, outline: 0 }} onClick={() => setOtherRetailer(!otherRetailer)}>Use Other Retailer?</button>
+              {otherRetailer
+                ? <div><p>Other Retailer Name:</p>
+                  <input type="text" onChange={(e) => setRetailer(e.target.value)} /></div>
+                : null}
+              <button onClick={() => spendPointsTx(otherRetailer, retailerAddress, retailer)}>Spend Points</button>
             </div>
-            <button style={{ backgroundColor: color, outline: 0 }} onClick={() => setOtherRetailer(!otherRetailer)}>Use Other Retailer?</button>
-            {otherRetailer
-              ? <div><p>Other Retailer Name:</p>
-                <input type="text" onChange={(e) => setRetailer(e.target.value)} /></div>
-              : null}
-            <button onClick={() => spendPointsTx(otherRetailer, retailerAddress, retailer)}>Spend Points</button>
+            <br />
+            <button onClick={tradeTx}>Trade</button>
+            <br />
+            <h4>Scripts: </h4>
+            <button onClick={() => readTheTokens(user.addr)}>View Your NFTs</button>
+            {nfts ? nfts : null}
+            <br />
+            <p>Retailer Address:</p>
+            <input type="text" onChange={(e) => setRetailer(e.target.value)} />
+            <button onClick={() => readTheRewards(retailer)}>Read Rewards</button>
+            {rewards
+              ?
+              <div className="rewards">
+                <h3>Rewards List:</h3>
+                <div className="namesOfRewards">
+                  {Object.keys(rewards).map((thing, i) => {
+                    return <p>{thing}</p>
+                  })}
+                </div>
+                <div className="costsOfRewards">
+                  {Object.values(rewards).map((thing, i) => {
+                    return <p>{thing}</p>
+                  })}
+                </div>
+              </div>
+              :
+              null}
           </div>
-          <br />
-          <button onClick={tradeTx}>Trade</button>
-          <br />
-          <h4>Scripts: </h4>
-          <p>Customer Address:</p>
-          <input type="text" onChange={(e) => setCustomer(e.target.value)} />
-          <button onClick={() => executeReadTokens(customer)}>Read Tokens</button>
-          <br />
-          <button onClick={executeReadRewards}>Read Rewards</button>
 
-          <h1>For Retailers:</h1>
-          <h4>Transactions: </h4>
-          <button onClick={() => setupForRetailerTx(user.identity.name)}>Setup For Retailer</button>
-          <br />
-          <input type="text" onChange={(e) => setCustomer(e.target.value)} placeholder="Customer address" />
-          <button onClick={() => earningPointsTx(customer)}>Earning Points</button>
-          <br />
-          <button onClick={createRewardTx}>Create Reward</button>
-          <button onClick={removeRewardTx}>Remove Reward</button>
-          <br />
-          <button onClick={instagramADTx}>Instagram Ad</button>
-          <br />
+          <div style={{ backgroundColor: 'lightgreen' }}>
+            <h1>For Retailers:</h1>
+            <h4>Transactions: </h4>
+            <button onClick={() => setupForRetailerTx(user.identity.name)}>Setup For Retailer</button>
+            <br />
+            <input type="text" onChange={(e) => setCustomer(e.target.value)} placeholder="Customer address" />
+            <button onClick={() => earningPointsTx(customer)}>Earning Points</button>
+            <br />
+            <button onClick={createRewardTx}>Create Reward</button>
+            <button onClick={removeRewardTx}>Remove Reward</button>
+            <br />
+            <button onClick={instagramADTx}>Instagram Ad</button>
+            <br />
+          </div>
 
-          <h1>For NonProfits:</h1>
-          <h4>Transactions: </h4>
-          <button onClick={setupNonProfitTx}>Setup For NonProfit</button>
-          <br />
-          <button onClick={stakeNonProfitTx}>Stake NonProfit</button>
+          <div style={{ backgroundColor: 'lightpink' }}>
+            <h1>For NonProfits:</h1>
+            <h4>Transactions: </h4>
+            <button onClick={setupNonProfitTx}>Setup For NonProfit</button>
+            <br />
+            <button onClick={stakeNonProfitTx}>Stake NonProfit</button>
 
-          <h4>Scripts: </h4>
-          <button onClick={executeReadNonProfitNFTs}>Read NonProfit NFTs</button>
-        </div>}
+            <h4>Scripts: </h4>
+            <button onClick={executeReadNonProfitNFTs}>Read NonProfit NFTs</button>
+          </div>
+        </div>
+      }
     </div >
   );
 }
