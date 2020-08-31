@@ -1,3 +1,6 @@
+.flex {
+  display: flex;
+}
 body {
   display: grid;
   place-items: center;

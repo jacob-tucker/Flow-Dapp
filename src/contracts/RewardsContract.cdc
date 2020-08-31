@@ -1,5 +1,4 @@
-
-// Rewards.cdc
+// RewardsContract.cdc
 
 // This contract provides the definition for the Rewards list for
 // each retailer.

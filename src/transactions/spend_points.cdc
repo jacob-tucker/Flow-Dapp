@@ -32,7 +32,7 @@ transaction {
     // The minimum tokens the user can use from this retailer (if the user is using a seperate retailer)
     let MinTokensFromHere: UFix64
     
-    prepare(acct: AuthAccount) {
+    prepare(acct: AuthAccount) { 
         // Borrows a reference to the retailer's rewards so we can see if the item exists and
         // how much it costs
         let retailerAccount = getAccount(0x05)
@@ -79,10 +79,10 @@ transaction {
         destroy oldReward
 
         // This is saying the user will use another retailer's points in the transaction
-        // If FALSE: the user will only use their points from this retailer
+        // If FALSE: the user will only use their points from this retailer (will
         self.OtherRetailerBool = booleanFromClient
         // Specifies the retailer from which the user will use their points that they earned there
-        self.OtherRetailer = "Burger King"
+        self.OtherRetailer = otherRetailerFromClient
         // The amount of tokens the user will use from this retailer (THIS ONLY APPLIES IF THE USER
         // IS USING A SEPERATE RETAILER'S TOKENS)
         self.TokensFromHere = UFix64(25)
@@ -101,13 +101,13 @@ transaction {
         if (self.OtherRetailerBool) {
             // Makes sure that the retailer the customer wants to use to help pay for the NFT is in the allowed
             // category of the reward, and also makes sure the customer meets the UCV requirements
-            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV >= self.MinUCV && self.CustomerCollection.myReferenceNFT.CV["McDonalds"]! >= self.MinCV) {
+            if (self.AllowedRetailers.contains(self.OtherRetailer) && self.CustomerCollection.myReferenceNFT.UCV >= self.MinUCV && self.CustomerCollection.myReferenceNFT.CV[NFTMinterRef.name]! >= self.MinCV) {
                 // Makes sure the user is using the minimum amount of tokens from this retailer
                 if (self.TokensFromHere < self.MinTokensFromHere) {
                     panic("You are not using enough tokens from this retailer")
                 }
                 // The cost of the item in points is deducted from the user's account
-                let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.TokensFromHere, retailer: "McDonalds")
+                let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.TokensFromHere, retailer: NFTMinterRef.name)
                 destroy removedTokensVault
 
                 // Removes tokens from the other retailer as well
@@ -119,7 +119,7 @@ transaction {
                 log("Took points away")  
 
                 // The retailer mints the new NFT and deposits it into the customer's collection
-                NFTMinterRef.mintNFT(recipient: self.CustomerCollection, retailer: "McDonalds", item: "Water Bottle")
+                NFTMinterRef.mintNFT(recipient: self.CustomerCollection, item: "Water Bottle")
 
                 log("Minted an NFT and put it in the customer's account")
             } else {
@@ -128,13 +128,13 @@ transaction {
         } else {
             // This is if they are just using tokens from the retailer they are getting the NFT from
             // The cost of the item in points is deducted from the user's account
-            let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItem, retailer: "McDonalds")
+            let removedTokensVault <- self.CustomerVaultToWithdraw.withdraw(amount: self.CostOfItem, retailer: NFTMinterRef.name)
             destroy removedTokensVault
 
-            log("Took 30 points away")  
+            log("Took 30 points away")   
 
             // The retailer mints the new NFT and deposits it into the customer's collection
-            NFTMinterRef.mintNFT(recipient: self.CustomerCollection, retailer: "McDonalds", item: "Water Bottle")
+            NFTMinterRef.mintNFT(recipient: self.CustomerCollection, item: "Water Bottle")
 
             log("Minted an NFT and put it in the customer's account")
         }

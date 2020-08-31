@@ -1,4 +1,4 @@
-// NFTv2.cdc
+// NonFungibleToke.cdc
 //
 // This is a complete version of the NonFungibleToken contract
 // that includes withdraw and deposit functionality, as well as a
@@ -154,8 +154,11 @@ pub contract NonFungibleToken {
         // in existence
         pub var idCount: UInt64
 
-        init() {
+        pub var name: String
+
+        init(name: String) {
             self.idCount = 1
+            self.name = name
         }
 
         // mintNFT 
@@ -163,10 +166,10 @@ pub contract NonFungibleToken {
         // Function that mints a new NFT with a new ID
         // and deposits it in the recipients collection 
         // using their collection reference
-        pub fun mintNFT(recipient: &AnyResource{NFTReceiver}, retailer: String, item: String) {
+        pub fun mintNFT(recipient: &AnyResource{NFTReceiver}, item: String) {
 
             // create a new NFT
-            var newNFT <- create NFT(initID: self.idCount, initRetailer: retailer, initItem: item)
+            var newNFT <- create NFT(initID: self.idCount, initRetailer: self.name, initItem: item)
             
             // deposit it in the recipient's account using their reference
             recipient.deposit(token: <-newNFT)
@@ -178,8 +181,8 @@ pub contract NonFungibleToken {
 
     // A function for retailers that allows them to use this minter to mint NFTs and give them to
     // their customers
-    pub fun createNFTMinter(): @NFTMinter {
-        return <- create NFTMinter()
+    pub fun createNFTMinter(name: String): @NFTMinter {
+        return <- create NFTMinter(name: name)
     }
 
 	init() {

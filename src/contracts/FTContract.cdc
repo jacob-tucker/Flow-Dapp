@@ -151,20 +151,26 @@ pub contract FungibleToken {
     // Resource object that an admin can control to mint new tokens
     pub resource VaultMinter {
 
+        pub var name: String
+
+        init(name: String) {
+            self.name = name
+        }
+
 		// Function that mints new tokens and deposits into an account's vault
 		// using their `Receiver` reference.
         // We say `&AnyResource{Receiver}` to say that the recipient can be any resource
         // as long as it implements the Receiver interface
-        pub fun mintTokens(amount: UFix64, recipient: &AnyResource{Receiver}, retailerName: String) {
+        pub fun mintTokens(amount: UFix64, recipient: &AnyResource{Receiver}) {
 			FungibleToken.totalSupply = FungibleToken.totalSupply + amount
-            recipient.deposit(from: <-create Vault(balance: amount), retailer: retailerName)
+            recipient.deposit(from: <-create Vault(balance: amount), retailer: self.name)
         }
     }
 
     // A function that allows retailers to have their own FungibleToken
     // minter, so they can give them to their customers
-    pub fun createFTMinter(): @VaultMinter {
-        return <-create VaultMinter()
+    pub fun createFTMinter(name: String): @VaultMinter {
+        return <-create VaultMinter(name: name)
     }
 
     // The init function for the contract. All fields in the contract must

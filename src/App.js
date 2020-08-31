@@ -30,6 +30,7 @@ import readNonProfitTokensURL from './scripts/readNonProfitTokens.cdc'
 
 import { FTAddress, NFTAddress, RewardsAddress, CustomerAddress, RetailerAddress, NonProfitAddress } from './flow/addresses'
 import loadCode from './utils/load-code';
+import { storeData, data } from './utils/storage';
 
 // Connection to dev wallet
 fcl.config()
@@ -49,12 +50,12 @@ const executeSimpleScript = async (a, b) => {
   return fcl.decode(response);
 };
 
-const executeReadTokens = async () => {
+const executeReadTokens = async (customer) => {
   let scriptCode = await loadCode(readTokensURL, {
     query: /(0x01|0x02|0x04)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
-    "0x04": CustomerAddress
+    "0x04": `0x${customer}`
   })
 
   await fcl.send([
@@ -155,12 +156,13 @@ const setupForCustomerTx = async () => {
   });
 }
 
-const setupForRetailerTx = async () => {
+const setupForRetailerTx = async (retailer) => {
   const tx = await runTransaction(setupForRetailerURL, {
-    query: /(0x01|0x02|0x03)/g,
+    query: /(0x01|0x02|0x03|retailerFromClient)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
-    "0x03": RewardsAddress
+    "0x03": RewardsAddress,
+    "retailerFromClient": `"${retailer}"`
   })
 
   fcl.tx(tx).subscribe((txStatus) => {
@@ -170,13 +172,12 @@ const setupForRetailerTx = async () => {
   });
 }
 
-const earningPointsTx = async (retailer) => {
+const earningPointsTx = async (customerAddr) => {
   const tx = await runTransaction(earningPointsURL, {
-    query: /(0x01|0x02|0x04|retailerFromClient)/g,
+    query: /(0x01|0x02|customerAddr)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
-    "0x04": CustomerAddress,
-    "retailerFromClient": `"${retailer}"`
+    "customerAddr": `0x${customerAddr}`
   })
 
   fcl.tx(tx).subscribe((txStatus) => {
@@ -199,13 +200,14 @@ const createRewardTx = async () => {
   });
 }
 
-const spendPointsTx = async (boolean) => {
+const spendPointsTx = async (boolean, retailerAddress, otherRetailerName) => {
   const tx = await runTransaction(spendPointsURL, {
-    query: /(0x01|0x02|0x03|0x05|booleanFromClient)/g,
+    query: /(0x01|0x02|0x03|0x05|otherRetailerFromClient|booleanFromClient)/g,
     "0x01": FTAddress,
     "0x02": NFTAddress,
     "0x03": RewardsAddress,
-    "0x05": RetailerAddress,
+    "0x05": `0x${retailerAddress}`,
+    "otherRetailerFromClient": `"${otherRetailerName}"`,
     "booleanFromClient": boolean
   })
 
@@ -291,6 +293,7 @@ function App() {
   const [scriptResult, setScriptResult] = useState(null);
   const [customer, setCustomer] = useState()
   const [retailer, setRetailer] = useState('')
+  const [retailerAddress, setRetailerAddress] = useState()
   const [otherRetailer, setOtherRetailer] = useState(false)
   const [color, setColor] = useState('red')
 
@@ -298,10 +301,10 @@ function App() {
     console.log(user)
     console.log("Address:", user.addr)
     console.log("CID:", user.cid)
-
     if (user.cid) {
       setUser(user);
       console.log(user)
+      storeData(user)
     } else {
       setUser(null);
     }
@@ -330,32 +333,65 @@ function App() {
       {scriptResult ? <p className="script-result">Computation Result: {scriptResult}</p> : null}
       {!userLoggedIn ? <button onClick={() => fcl.authenticate()}>Login</button>
         : <div>
+          <div>
+            {data.map((thing, i) => {
+              return <p key={i}>{thing.name} + {thing.addr}</p>
+            })}
+          </div>
           <h1 className="welcome">Welcome, {user.identity.name}</h1>
+          <button onClick={() => fcl.unauthenticate()}>Logout</button>
           <p>Your Address</p><p className="address">{user.addr}</p>
-          <h1>Retailer Name:</h1>
-          <input type="text" onChange={(e) => setRetailer(e.target.value)} />
-          <br />
-          <button style={{ backgroundColor: color, outline: 0 }} onClick={() => setOtherRetailer(!otherRetailer)}>Use Other Retailer?</button>
-          <br />
-
-          <button onClick={simpleTransaction}>Simple Tx</button>
           <button onClick={deployFTContract}>Deploy FTContract</button>
           <button onClick={deployNFTContract}>Deploy NFTContract</button>
           <button onClick={deployRewardsContract}>Deploy RewardsContract</button>
+
+          <h1>For Customers:</h1>
+          <h4>Transactions: </h4>
           <button onClick={setupForCustomerTx}>Setup For Customer</button>
-          <button onClick={setupForRetailerTx}>Setup For Retailer</button>
-          <button onClick={() => earningPointsTx(user.identity.name)}>Earning Points</button>
-          <button onClick={createRewardTx}>Create Reward</button>
-          <button onClick={() => spendPointsTx(otherRetailer)}>Spend Points</button>
-          <button onClick={removeRewardTx}>Remove Reward</button>
+          <br />
+          <div className="flex">
+            <div>
+              <p>Retailer Address:</p>
+              <input type="text" onChange={(e) => setRetailerAddress(e.target.value)} />
+            </div>
+            <button style={{ backgroundColor: color, outline: 0 }} onClick={() => setOtherRetailer(!otherRetailer)}>Use Other Retailer?</button>
+            {otherRetailer
+              ? <div><p>Other Retailer Name:</p>
+                <input type="text" onChange={(e) => setRetailer(e.target.value)} /></div>
+              : null}
+            <button onClick={() => spendPointsTx(otherRetailer, retailerAddress, retailer)}>Spend Points</button>
+          </div>
+          <br />
           <button onClick={tradeTx}>Trade</button>
-          <button onClick={instagramADTx}>Instagram Ad</button>
-          <button onClick={setupNonProfitTx}>Setup For NonProfit</button>
-          <button onClick={stakeNonProfitTx}>Stake NonProfit</button>
-          <button onClick={executeReadTokens}>Read Tokens</button>
+          <br />
+          <h4>Scripts: </h4>
+          <p>Customer Address:</p>
+          <input type="text" onChange={(e) => setCustomer(e.target.value)} />
+          <button onClick={() => executeReadTokens(customer)}>Read Tokens</button>
+          <br />
           <button onClick={executeReadRewards}>Read Rewards</button>
+
+          <h1>For Retailers:</h1>
+          <h4>Transactions: </h4>
+          <button onClick={() => setupForRetailerTx(user.identity.name)}>Setup For Retailer</button>
+          <br />
+          <input type="text" onChange={(e) => setCustomer(e.target.value)} placeholder="Customer address" />
+          <button onClick={() => earningPointsTx(customer)}>Earning Points</button>
+          <br />
+          <button onClick={createRewardTx}>Create Reward</button>
+          <button onClick={removeRewardTx}>Remove Reward</button>
+          <br />
+          <button onClick={instagramADTx}>Instagram Ad</button>
+          <br />
+
+          <h1>For NonProfits:</h1>
+          <h4>Transactions: </h4>
+          <button onClick={setupNonProfitTx}>Setup For NonProfit</button>
+          <br />
+          <button onClick={stakeNonProfitTx}>Stake NonProfit</button>
+
+          <h4>Scripts: </h4>
           <button onClick={executeReadNonProfitNFTs}>Read NonProfit NFTs</button>
-          <button onClick={() => fcl.unauthenticate()}>Logout</button>
         </div>}
     </div >
   );

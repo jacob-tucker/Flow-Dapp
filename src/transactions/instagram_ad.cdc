@@ -11,17 +11,12 @@ import NonFungibleToken from 0x02
 transaction {
 
     let FTMinterRef: &FungibleToken.VaultMinter
-    let NFTMinterRef: &NonFungibleToken.NFTMinter
 
     prepare(acct: AuthAccount) {
         // Gets a reference to the fungible token minter of the retailer
         self.FTMinterRef = acct.getCapability(/private/PrivFTMinter)!
                                 .borrow<&FungibleToken.VaultMinter>()
                                 ?? panic("Could not borrow the fungible token minter from the retailer")
-        // Gets a reference to the nonfungible token minter of the retailer
-        self.NFTMinterRef = acct.getCapability(/public/PubNFTMinter)!
-                                .borrow<&NonFungibleToken.NFTMinter>()
-                                ?? panic("Could not borrow the nonfungible token minter from the retailer")
     }
 
     execute {
@@ -38,11 +33,11 @@ transaction {
                                     ?? panic("Could not borrow owner's NFT collection")
         // The retailer mints the new tokens and deposits them into the customer's vault, taking into
         // account 5% of the UCV value.
-        self.FTMinterRef.mintTokens(amount: UFix64(10) + customerCollection.myReferenceNFT.UCV * UFix64(0.05), recipient: customerVault, retailerName: "McDonalds")
+        self.FTMinterRef.mintTokens(amount: UFix64(10) + customerCollection.myReferenceNFT.UCV * UFix64(0.05), recipient: customerVault)
 
         log("Retailer minted >= 10 points and gave them to the customer")
 
-        customerCollection.myReferenceNFT.ad(retailer: "McDonalds")
+        customerCollection.myReferenceNFT.ad(retailer: self.FTMinterRef.name)
 
         log("Updated customer's UCV and CV value")
     }

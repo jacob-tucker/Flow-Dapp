@@ -31,7 +31,7 @@ transaction {
         // otherRetailers, which is a list of retailers the user is allowed to spend their tokens from to help out with thr purchase
         // minTokensPercent, which is a percent of the amount of tokens the user must spend from THIS retailer in the transaction
         // multiplier, which multiplies the base cost of the NFT by a number to get a new cost if incorporating another r
-        RetailerRewards.createReward(name: "Water Bottle", points: UFix64(30), ucvNumber: UFix64(5), cvNumber: UFix64(0), otherRetailers: ["Burger King"], minTokensPercent: UFix64(0.5), multiplier: UFix64(1.25))
+        RetailerRewards.createReward(name: "Water Bottle", points: UFix64(30), ucvNumber: UFix64(5), cvNumber: UFix64(0), otherRetailers: ["Jerrys Deli"], minTokensPercent: UFix64(0.5), multiplier: UFix64(1.25))
 
         log("Created reward")
     }

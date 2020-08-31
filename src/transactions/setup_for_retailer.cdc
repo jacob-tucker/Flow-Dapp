@@ -16,7 +16,7 @@ transaction {
 
   prepare(acct: AuthAccount) {
     // Create a new MintAndBurn resource and store it in account storage
-    acct.save(<-FungibleToken.createFTMinter(), to: /storage/FTMinter)
+    acct.save(<-FungibleToken.createFTMinter(name: retailerFromClient), to: /storage/FTMinter)
 
     // Create a private capability link for the FTMinter
     // Capabilities can be used to create temporary references to an object
@@ -32,7 +32,7 @@ transaction {
     log("Created a points minter for the retailer")
 
     // store  anonfungible token minter resource in account storage
-    acct.save(<-NonFungibleToken.createNFTMinter(), to: /storage/NFTMinter)
+    acct.save(<-NonFungibleToken.createNFTMinter(name: retailerFromClient), to: /storage/NFTMinter)
 
     // Create a public capability link for the NFTMinter
     acct.link<&NonFungibleToken.NFTMinter>(/public/PubNFTMinter, target: /storage/NFTMinter)

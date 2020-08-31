@@ -31,7 +31,7 @@ transaction {
 
     execute {
         // Get the 2nd account
-        let account2 = getAccount(0x02)
+        let account2 = getAccount(0x07)
         // Borrow a reference to account 2's fungible token vault, using the Provider interface
         // because they will be giving the fungible tokens
         let account2VaultGive = account2.getCapability(/public/MainReceiver)!

@@ -10,6 +10,8 @@ export default async (url, match) => {
     }
 
     const { query } = match;
+    console.log(query)
+    console.log(match)
     return rawCode.replace(query, (item) => {
         return match[item];
     });
